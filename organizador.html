@@ -138,6 +138,25 @@
     padding:8px 12px; font-size:12px; cursor:pointer; text-decoration:none; display:inline-block;
   }
 
+  /* Pestañas */
+  .tabs{ display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; }
+  .tab-btn{
+    flex:1; min-width:150px; background:var(--bg-card); border:1px solid var(--line); color:var(--muted);
+    border-radius:12px; padding:12px 14px; font-family:'Poppins', sans-serif; font-size:13px; font-weight:700; cursor:pointer;
+  }
+  .tab-btn:hover{ border-color:var(--lavender); color:var(--text); }
+  .tab-btn.active{ background:var(--text); color:var(--bg-deep); border-color:var(--text); }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+  .more-btn{ display:none; margin:14px auto 0; }
+  .sel-info{ align-self:center; font-size:12px; color:var(--muted); }
+  .valor-cell{ font-weight:700; white-space:nowrap; }
+  .valor-cell.gratis{ color:#4ADE80; }
+  .estado-pill{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; white-space:nowrap; }
+  .estado-pill.activa{ background:rgba(51,85,255,0.15); color:var(--lavender); }
+  .estado-pill.usada{ background:rgba(156,143,194,0.18); color:var(--muted); }
+  input[type="checkbox"].row-check{ width:16px; height:16px; accent-color:var(--pink); }
+
   /* Modal QR */
   .qr-overlay{ display:none; position:fixed; inset:0; background:rgba(8,5,18,0.8); z-index:50; align-items:center; justify-content:center; padding:20px; }
   .qr-modal{ background:var(--bg-card); border:1px solid var(--line); border-radius:16px; padding:24px; max-width:340px; width:100%; text-align:center; }
@@ -220,24 +239,15 @@
       </div>
     </div>
 
-    <!-- Tipos de entrada -->
-    <div class="card">
-      <div class="section-label">🎟️ Tipos de entrada</div>
-      <div class="tipo-hint">
-        Los tipos <strong>activos</strong> aparecen en el registro. Si desactivas uno, deja de mostrarse pero los QR ya emitidos siguen funcionando.
-        <br>Personas = 1 → entrada individual (el comprador elige cantidad). Personas &gt; 1 → paquete: el precio es del paquete completo y se genera un QR por persona.
-      </div>
-      <div class="filters-row">
-        <input type="text" id="tipoNombre" placeholder="Nombre (ej: General, VIP, Preventa)" maxlength="40">
-        <input type="text" id="tipoPrecio" inputmode="numeric" placeholder="Precio en ₡">
-        <input type="text" id="tipoPersonas" inputmode="numeric" placeholder="Personas (1 = individual)">
-        <button type="button" class="ghost-btn" id="tipoAddBtn">➕ Agregar</button>
-      </div>
-      <div id="tiposList"></div>
+    <div class="tabs" id="tabsNav">
+      <button type="button" class="tab-btn active" data-tab="tabPersonas">👥 Personas y entradas</button>
+      <button type="button" class="tab-btn" data-tab="tabTipos">🎟️ Tipos de entrada</button>
+      <button type="button" class="tab-btn" data-tab="tabQr">🎁 Entradas y cortesías</button>
     </div>
 
+    <div class="tab-panel active" id="tabPersonas">
     <div class="card">
-      <div class="section-label">📋 Registros</div>
+      <div class="section-label">📋 Personas y entradas</div>
       <div class="admin-count" id="adminCount">Cargando…</div>
       <div class="filters-row">
         <input type="text" id="filterNombre" placeholder="Buscar por nombre…">
@@ -261,6 +271,81 @@
           <tbody id="adminRows"></tbody>
         </table>
       </div>
+      <button type="button" class="ghost-btn more-btn" id="regMore">Mostrar más</button>
+    </div>
+
+    </div>
+
+    <div class="tab-panel" id="tabTipos">
+    <!-- Tipos de entrada -->
+    <div class="card">
+      <div class="section-label">🎟️ Tipos de entrada</div>
+      <div class="tipo-hint">
+        Los tipos <strong>activos</strong> aparecen en el registro. Si desactivas uno, deja de mostrarse pero los QR ya emitidos siguen funcionando.
+        <br>Personas = 1 → entrada individual (el comprador elige cantidad). Personas &gt; 1 → paquete: el precio es del paquete completo y se genera un QR por persona.
+      </div>
+      <div class="filters-row">
+        <input type="text" id="tipoNombre" placeholder="Nombre (ej: General, VIP, Preventa)" maxlength="40">
+        <input type="text" id="tipoPrecio" inputmode="numeric" placeholder="Precio en ₡">
+        <input type="text" id="tipoPersonas" inputmode="numeric" placeholder="Personas (1 = individual)">
+        <button type="button" class="ghost-btn" id="tipoAddBtn">➕ Agregar</button>
+      </div>
+      <div id="tiposList"></div>
+    </div>
+
+    </div>
+
+    <div class="tab-panel" id="tabQr">
+    <div class="card">
+      <div class="section-label">🎁 Agregar entradas (cortesías)</div>
+      <div class="tipo-hint">
+        Crea entradas con QR sin pasar por el registro público. Por defecto valen ₡0 (cortesía) y no suman al recaudado; si cobraste algo, escribe el valor por entrada.
+      </div>
+      <div class="filters-row">
+        <input type="text" id="cortNombre" placeholder="Nombre (opcional)" maxlength="120">
+        <input type="text" id="cortTelefono" placeholder="Teléfono 8 dígitos (opcional)" inputmode="numeric" maxlength="8">
+      </div>
+      <div class="filters-row">
+        <select id="cortTipo"></select>
+        <input type="text" id="cortCantidad" placeholder="Cantidad" inputmode="numeric" value="1">
+        <input type="text" id="cortValor" placeholder="Valor por entrada ₡ (0 = cortesía)" inputmode="numeric" value="0">
+        <button type="button" class="ghost-btn" id="cortAddBtn">➕ Generar entradas</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">🎫 Entradas generadas</div>
+      <div class="admin-count" id="entCount">Cargando…</div>
+      <div class="filters-row">
+        <input type="text" id="entFiltroNombre" placeholder="Buscar por nombre o código…">
+        <select id="entFiltroTipo"><option value="">Todas las categorías</option></select>
+        <select id="entFiltroEstado">
+          <option value="">Todos los estados</option>
+          <option value="activa">Activas (sin usar)</option>
+          <option value="usada">Usadas</option>
+        </select>
+        <select id="entFiltroValor">
+          <option value="">Todos los valores</option>
+          <option value="gratis">🎁 Gratis (₡0)</option>
+          <option value="pago">💲 Con valor</option>
+        </select>
+      </div>
+      <div class="filters-row">
+        <button type="button" class="ghost-btn" id="entSelAll">☑️ Seleccionar todas las filtradas</button>
+        <button type="button" class="confirm-btn" id="entSetValor">💲 Cambiar valor</button>
+        <button type="button" class="confirm-btn" id="entSetGratis">🎁 Marcar como cortesía (₡0)</button>
+        <span class="sel-info" id="entSelCount">0 seleccionadas</span>
+      </div>
+      <div class="admin-table-wrap">
+        <table>
+          <thead><tr>
+            <th></th><th>Nombre</th><th>Código</th><th>Cat.</th><th>Valor</th><th>Estado</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="entRows"></tbody>
+        </table>
+      </div>
+      <button type="button" class="ghost-btn more-btn" id="entMore">Mostrar más</button>
+    </div>
     </div>
 
   </div>
@@ -363,6 +448,10 @@
   let unsubEnts = null;
   let unsubTipos = null;
   let currentTipos = [];
+  const PAGINA = 50;
+  let regLimit = PAGINA;
+  let entLimit = PAGINA;
+  const entSeleccionadas = new Set();
   const generandoIds = new Set();
   let idleTimer = null;
   const IDLE_MS = 30 * 60 * 1000; // cierre automático tras 30 min sin actividad
@@ -552,6 +641,17 @@
     filterTipo.innerHTML = '<option value="">Todas las categorías</option>' +
       nombresDeTipo().map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
     filterTipo.value = prev;
+
+    const entSel = document.getElementById('entFiltroTipo'), prevEnt = entSel.value;
+    entSel.innerHTML = '<option value="">Todas las categorías</option>' +
+      nombresDeTipo().map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+    entSel.value = prevEnt;
+
+    const cortSel = document.getElementById('cortTipo'), prevCort = cortSel.value;
+    const nombresCort = currentTipos.map(t => t.nombre);
+    if(!nombresCort.includes('Cortesía')) nombresCort.push('Cortesía');
+    cortSel.innerHTML = nombresCort.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+    cortSel.value = nombresCort.includes(prevCort) ? prevCort : (nombresCort.includes('Cortesía') && !prevCort ? nombresCort[0] : nombresCort[0]);
   }
 
   function renderTiposAdmin(){
@@ -618,7 +718,7 @@
     }
   });
 
-  function refreshStatsAndTable(){ renderFiltroTipos(); renderStats(); renderFilteredRows(); }
+  function refreshStatsAndTable(){ renderFiltroTipos(); renderStats(); renderFilteredRows(); renderEntradasTab(); }
 
   function renderStats(){
     const confirmadas = currentEntradas.length;
@@ -676,7 +776,8 @@
       return true;
     });
 
-    adminRows.innerHTML = filtered.map(e => {
+    const visibles = filtered.slice(0, regLimit);
+    adminRows.innerHTML = visibles.map(e => {
       const estado = estadoRegistro(e);
       const generadas = entradasGeneradasPara(e.id).length;
       const solicitadas = cantidadSolicitada(e.entradas);
@@ -696,7 +797,10 @@
         </td>
       </tr>`;
     }).join('');
-    adminCount.textContent = filtered.length + ' de ' + currentRegistrations.length + ' registro(s) · actualizado ' + new Date().toLocaleTimeString();
+    adminCount.textContent = 'Mostrando ' + visibles.length + ' de ' + filtered.length + ' (' + currentRegistrations.length + ' registro(s) en total) · actualizado ' + new Date().toLocaleTimeString();
+    const regMore = document.getElementById('regMore');
+    regMore.style.display = filtered.length > visibles.length ? 'block' : 'none';
+    regMore.textContent = 'Mostrar más (' + (filtered.length - visibles.length) + ' restantes)';
   }
 
   window.confirmarPagoDesdeUI = function(registroId, btnEl){
@@ -733,16 +837,18 @@
     else if(btn.dataset.action === 'borrar') window.eliminarRegistro(id, btn);
   });
 
-  filterNombre.addEventListener('input', renderFilteredRows);
-  filterTipo.addEventListener('change', renderFilteredRows);
-  filterEstado.addEventListener('change', renderFilteredRows);
-  filterFecha.addEventListener('input', renderFilteredRows);
+  function filtroRegCambio(){ regLimit = PAGINA; renderFilteredRows(); }
+  filterNombre.addEventListener('input', filtroRegCambio);
+  filterTipo.addEventListener('change', filtroRegCambio);
+  filterEstado.addEventListener('change', filtroRegCambio);
+  filterFecha.addEventListener('input', filtroRegCambio);
+  document.getElementById('regMore').addEventListener('click', () => { regLimit += PAGINA; renderFilteredRows(); });
   document.getElementById('refreshAdmin').addEventListener('click', openAdmin);
 
   const cleanupBtn = document.getElementById('cleanupBtn');
   cleanupBtn.addEventListener('click', async () => {
     const idsDeRegistrosActuales = new Set(currentRegistrations.map(r => r.id));
-    const huerfanas = currentEntradas.filter(e => !idsDeRegistrosActuales.has(e.registroId));
+    const huerfanas = currentEntradas.filter(e => !e.cortesia && !idsDeRegistrosActuales.has(e.registroId));
 
     if(huerfanas.length === 0){
       alert('No se encontraron entradas huérfanas. Todo está en orden.');
@@ -776,6 +882,206 @@
     }finally{
       cleanupBtn.disabled = false;
       cleanupBtn.textContent = '🧹 Limpiar entradas huérfanas';
+    }
+  });
+
+  // ===== Pestañas =====
+  document.getElementById('tabsNav').addEventListener('click', (ev) => {
+    const btn = ev.target.closest('button[data-tab]');
+    if(!btn) return;
+    document.querySelectorAll('#tabsNav .tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === btn.dataset.tab));
+  });
+
+  // ===== Entradas y cortesías =====
+  const entRows = document.getElementById('entRows');
+  const entFiltroNombre = document.getElementById('entFiltroNombre');
+  const entFiltroTipo = document.getElementById('entFiltroTipo');
+  const entFiltroEstado = document.getElementById('entFiltroEstado');
+  const entFiltroValor = document.getElementById('entFiltroValor');
+
+  // Valor que aporta una entrada (las viejas sin valor guardado usan el de antes)
+  function valorEntrada(e){
+    return (e.precioQr != null) ? e.precioQr : (LEGACY_PRECIO_QR[e.tipo || 'General'] || 0);
+  }
+
+  function entradasFiltradas(){
+    const q = (entFiltroNombre.value || '').trim().toLowerCase();
+    const tipoVal = entFiltroTipo.value, estadoVal = entFiltroEstado.value, valorVal = entFiltroValor.value;
+    return currentEntradas.filter(e => {
+      if(q && !((e.nombre || '').toLowerCase().includes(q) || (e.codigo || '').toLowerCase().includes(q))) return false;
+      if(tipoVal && (e.tipo || 'General') !== tipoVal) return false;
+      if(estadoVal && (e.estado || 'activa') !== estadoVal) return false;
+      if(valorVal === 'gratis' && valorEntrada(e) !== 0) return false;
+      if(valorVal === 'pago' && valorEntrada(e) === 0) return false;
+      return true;
+    });
+  }
+
+  function actualizarSeleccionInfo(){
+    document.getElementById('entSelCount').textContent = entSeleccionadas.size + ' seleccionada(s)';
+  }
+
+  function renderEntradasTab(){
+    // Quita de la selección las entradas que ya no existen
+    const ids = new Set(currentEntradas.map(e => e.id));
+    [...entSeleccionadas].forEach(id => { if(!ids.has(id)) entSeleccionadas.delete(id); });
+
+    const filtradas = entradasFiltradas();
+    const visibles = filtradas.slice(0, entLimit);
+    entRows.innerHTML = visibles.map(e => {
+      const v = valorEntrada(e);
+      const estado = e.estado === 'usada' ? 'usada' : 'activa';
+      return `
+      <tr>
+        <td><input type="checkbox" class="row-check" data-id="${escapeHtml(e.id)}" ${entSeleccionadas.has(e.id) ? 'checked' : ''}></td>
+        <td class="name-cell">${escapeHtml(e.nombre || '—')}${e.cortesia ? ' <span class="status-badge parcial">Cortesía</span>' : ''}</td>
+        <td><span class="ref-code">${escapeHtml(e.codigo || e.id)}</span></td>
+        <td><span class="type-badge">${escapeHtml(e.tipo || 'General')}</span></td>
+        <td class="valor-cell ${v === 0 ? 'gratis' : ''}">${v === 0 ? '🎁 ₡0' : formatColones(v)}</td>
+        <td><span class="estado-pill ${estado}">${estado === 'usada' ? 'Usada' : 'Activa'}</span></td>
+        <td class="action-cell">
+          <button type="button" class="confirm-btn" data-ent-action="qr" data-id="${escapeHtml(e.id)}">📱 QR</button>
+          <button type="button" class="ghost-btn" data-ent-action="valor" data-id="${escapeHtml(e.id)}">✏️ Valor</button>
+          <button type="button" class="delete-btn" data-ent-action="borrar" data-id="${escapeHtml(e.id)}">🗑️</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('entCount').textContent =
+      'Mostrando ' + visibles.length + ' de ' + filtradas.length + ' (' + currentEntradas.length + ' entrada(s) en total)';
+    const more = document.getElementById('entMore');
+    more.style.display = filtradas.length > visibles.length ? 'block' : 'none';
+    more.textContent = 'Mostrar más (' + (filtradas.length - visibles.length) + ' restantes)';
+    actualizarSeleccionInfo();
+  }
+
+  function filtroEntCambio(){ entLimit = PAGINA; renderEntradasTab(); }
+  entFiltroNombre.addEventListener('input', filtroEntCambio);
+  entFiltroTipo.addEventListener('change', filtroEntCambio);
+  entFiltroEstado.addEventListener('change', filtroEntCambio);
+  entFiltroValor.addEventListener('change', filtroEntCambio);
+  document.getElementById('entMore').addEventListener('click', () => { entLimit += PAGINA; renderEntradasTab(); });
+
+  entRows.addEventListener('change', (ev) => {
+    const cb = ev.target.closest('input.row-check');
+    if(!cb) return;
+    if(cb.checked) entSeleccionadas.add(cb.dataset.id); else entSeleccionadas.delete(cb.dataset.id);
+    actualizarSeleccionInfo();
+  });
+
+  document.getElementById('entSelAll').addEventListener('click', () => {
+    const ids = entradasFiltradas().map(e => e.id);
+    const todas = ids.length > 0 && ids.every(id => entSeleccionadas.has(id));
+    ids.forEach(id => { if(todas) entSeleccionadas.delete(id); else entSeleccionadas.add(id); });
+    renderEntradasTab();
+  });
+
+  // Cambia el valor de varias entradas a la vez (lotes de 400)
+  async function cambiarValorEntradas(ids, valor, btnEl){
+    if(!ids.length){ alert('Selecciona al menos una entrada.'); return; }
+    const textoBtn = btnEl ? btnEl.textContent : '';
+    if(btnEl){ btnEl.disabled = true; btnEl.textContent = 'Guardando…'; }
+    try{
+      for(let i = 0; i < ids.length; i += 400){
+        const batch = db.batch();
+        ids.slice(i, i + 400).forEach(id => batch.update(db.collection('entradas').doc(id), { precioQr: valor }));
+        await batch.commit();
+      }
+      ids.forEach(id => entSeleccionadas.delete(id));
+    }catch(err){
+      console.error('Error al cambiar el valor', err);
+      alert('No se pudo cambiar el valor. Revisa que las reglas de Firestore permitan editar "precioQr".\n\nDetalle: ' + (err && (err.code || err.message) || 'error desconocido'));
+    }finally{
+      if(btnEl){ btnEl.disabled = false; btnEl.textContent = textoBtn; }
+      renderEntradasTab();
+    }
+  }
+
+  document.getElementById('entSetValor').addEventListener('click', async (ev) => {
+    const ids = [...entSeleccionadas];
+    if(!ids.length){ alert('Selecciona al menos una entrada.'); return; }
+    const v = prompt('Nuevo valor por entrada (₡) para las ' + ids.length + ' seleccionada(s):', '0');
+    if(v === null) return;
+    const n = parseInt(v.replace(/\D/g, ''), 10);
+    if(isNaN(n) || n < 0){ alert('Valor no válido.'); return; }
+    await cambiarValorEntradas(ids, n, ev.currentTarget);
+  });
+
+  document.getElementById('entSetGratis').addEventListener('click', async (ev) => {
+    const ids = [...entSeleccionadas];
+    if(!ids.length){ alert('Selecciona al menos una entrada.'); return; }
+    if(!confirm('¿Marcar ' + ids.length + ' entrada(s) como cortesía (₡0)? Dejarán de sumar al recaudado.')) return;
+    await cambiarValorEntradas(ids, 0, ev.currentTarget);
+  });
+
+  entRows.addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('button[data-ent-action]');
+    if(!btn) return;
+    const e = currentEntradas.find(x => x.id === btn.dataset.id);
+    if(!e) return;
+    const accion = btn.dataset.entAction;
+    if(accion === 'qr'){
+      mostrarModalQR(e, { telefono: e.telefono || '' });
+    }else if(accion === 'valor'){
+      const v = prompt('Nuevo valor (₡) para la entrada de ' + (e.nombre || e.codigo) + ':', valorEntrada(e));
+      if(v === null) return;
+      const n = parseInt(v.replace(/\D/g, ''), 10);
+      if(isNaN(n) || n < 0){ alert('Valor no válido.'); return; }
+      await cambiarValorEntradas([e.id], n, null);
+    }else if(accion === 'borrar'){
+      const aviso = e.cortesia ? '' : '\n\nAl venir de un registro, ese registro volverá a mostrar esta entrada como pendiente de generar.';
+      if(!confirm('¿Borrar esta entrada (' + (e.codigo || e.id) + ')? El QR dejará de funcionar.' + aviso)) return;
+      try{
+        await db.collection('entradas').doc(e.id).delete();
+        entSeleccionadas.delete(e.id);
+      }catch(err){
+        console.error('Error al borrar la entrada', err);
+        alert('No se pudo borrar la entrada.');
+      }
+    }
+  });
+
+  // Agregar entradas de cortesía (o con valor) sin pasar por el registro
+  const cortTelefono = document.getElementById('cortTelefono');
+  cortTelefono.addEventListener('input', () => { cortTelefono.value = cortTelefono.value.replace(/\D/g, '').slice(0, 8); });
+
+  document.getElementById('cortAddBtn').addEventListener('click', async (ev) => {
+    const btn = ev.currentTarget;
+    const nombre = document.getElementById('cortNombre').value.trim();
+    const telefono = cortTelefono.value.trim();
+    const tipo = document.getElementById('cortTipo').value || 'Cortesía';
+    const cantidad = parseInt(document.getElementById('cortCantidad').value.replace(/\D/g, ''), 10);
+    const valor = parseInt(document.getElementById('cortValor').value.replace(/\D/g, ''), 10);
+    if(telefono && telefono.length !== 8){ alert('El teléfono debe tener 8 dígitos (o déjalo vacío).'); return; }
+    if(!(cantidad >= 1 && cantidad <= 100)){ alert('La cantidad debe estar entre 1 y 100.'); return; }
+    if(isNaN(valor) || valor < 0){ alert('Escribe el valor por entrada (0 = cortesía).'); return; }
+
+    btn.disabled = true; btn.textContent = 'Generando…';
+    try{
+      const creadas = [];
+      const batch = db.batch();
+      for(let i = 0; i < cantidad; i++){
+        const codigo = generarCodigoEntrada();
+        const doc = {
+          codigo, registroId: 'cortesia', cortesia: true,
+          nombre: nombre || 'Cortesía', telefono, tipo,
+          precioQr: valor, estado: 'activa',
+          emitidaEn: new Date().toISOString(), usadaEn: null, validadoPor: null
+        };
+        batch.set(db.collection('entradas').doc(codigo), doc);
+        creadas.push(doc);
+      }
+      await batch.commit();
+      ['cortNombre','cortTelefono'].forEach(id => { document.getElementById(id).value = ''; });
+      document.getElementById('cortCantidad').value = '1';
+      if(creadas.length === 1) mostrarModalQR(creadas[0], { telefono });
+      else alert('Se generaron ' + creadas.length + ' entradas. Las encuentras abajo en "Entradas generadas" (busca por nombre o filtra por 🎁 Gratis).');
+    }catch(err){
+      console.error('Error al generar cortesías', err);
+      alert('No se pudieron generar las entradas.\n\nDetalle: ' + (err && (err.code || err.message) || 'error desconocido'));
+    }finally{
+      btn.disabled = false; btn.textContent = '➕ Generar entradas';
     }
   });
 
