@@ -67,7 +67,7 @@
     padding:8px 14px; border-radius:999px; font-size:12.5px; color:var(--text);
     display:flex; align-items:center; gap:6px;
   }
-  .brand-logo{ display:block; margin:0 auto 4px; width:min(230px,62vw); height:auto; filter:drop-shadow(0 0 22px rgba(244,236,216,.18)); }
+  .brand-logo{ display:block; margin:0 auto 4px; width:min(360px,82vw); height:auto; filter:drop-shadow(0 0 22px rgba(244,236,216,.18)); }
   .venue{ margin-top:26px; }
   .venue-label{ font-size:10.5px; letter-spacing:.3em; text-transform:uppercase; color:var(--gold); font-weight:600; margin:0 0 10px; }
   .venue-logo{ display:block; margin:0 auto; width:min(150px,42vw); height:auto; }
@@ -104,7 +104,7 @@
     font-size:14px; transition:border-color .15s ease;
   }
   .radio-option:has(input:checked){ border-color:var(--pink); background:rgba(244,236,216,0.08); }
-  .radio-option input{ accent-color:var(--pink); width:16px; height:16px; flex:none; }
+  .radio-option input{ accent-color:var(--pink); width:16px; height:16px; }
   .check-option{
     display:flex; align-items:flex-start; gap:10px; background:var(--bg-field);
     border:1px solid var(--line); border-radius:10px; padding:13px; margin-top:6px;
@@ -132,7 +132,7 @@
   .confirm h2{ font-family:'Bebas Neue', sans-serif; font-size:30px; letter-spacing:.03em; margin:0 0 8px; }
   .confirm p{ color:var(--muted); font-size:14px; line-height:1.6; margin:0 0 4px; }
   .recap{ text-align:left; background:var(--bg-field); border:1px solid var(--line); border-radius:12px; padding:16px; margin-top:18px; font-size:13.5px; }
-  .recap div{ display:flex; justify-content:space-between; gap:12px; padding:6px 0; border-bottom:1px solid var(--line); }
+  .recap div{ display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--line); }
   .recap div:last-child{ border-bottom:none; }
   .recap span:first-child{ color:var(--muted); }
   .again{ margin-top:20px; background:none; border:1px solid var(--line); color:var(--text); padding:11px 16px; border-radius:10px; cursor:pointer; font-size:13px; }
@@ -146,18 +146,20 @@
     display:flex; align-items:center; justify-content:center; padding:0;
   }
   #musicBtn:hover{ border-color:var(--lavender); }
+  .powered{ display:flex; align-items:center; justify-content:flex-start; gap:8px; padding:18px 16px 22px; opacity:.75; }
+  .powered span{ font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:#8d86b0; }
+  .powered img{ height:20px; width:auto; display:block; }
 </style>
 </head>
 <body>
 
 <div class="hero">
   <div class="stars" id="stars"></div>
-  <!-- ⚠️ REEMPLAZA REEMPLAZAR_LOGO_BRUKOFF por el src="data:image/webp;base64,..." que ya tienes en tu index.html actual -->
-  <img class="brand-logo" src="REEMPLAZAR_LOGO_BRUKOFF" width="460" height="371" alt="BrukOff — Organización de eventos">
+  <img class="brand-logo" src="logo-axora.webp" width="1000" height="406" alt="AXORA Events — Organización de eventos">
   <div class="moon">✨</div>
-  <p class="eyebrow">BRUKOFF PRESENTA</p>
+  <p class="eyebrow">AXORA PRESENTA</p>
   <h1 class="title"> Sweet Dreams </h1>
-  <p class="subtitle">Una noche de música y sorpresas con DJ CDAU y un artista sorpresa.</p>
+  <p class="subtitle">Una noche de música y sorpresas con DJ CDAU, Caliel, DJ BomberMusik y artista sorpresa.</p>
   <div class="info-row">
     <div class="chip">📅 19 de diciembre</div>
     <div class="chip">🕘 9:00 PM</div>
@@ -165,8 +167,7 @@
   </div>
   <div class="venue">
     <p class="venue-label">Lugar</p>
-    <!-- ⚠️ REEMPLAZA REEMPLAZAR_LOGO_RANCHO por el src="data:image/webp;base64,..." del logo del rancho que ya tienes -->
-    <img class="venue-logo" src="REEMPLAZAR_LOGO_RANCHO" width="380" height="347" alt="Rancho Agüero's Bar &amp; Restaurante">
+    <img class="venue-logo" src="logo-venue.webp" width="380" height="347" alt="Rancho Agüero's Bar &amp; Restaurante">
   </div>
   <div class="badge18">🔞 Exclusivamente para mayores de edad</div>
 </div>
@@ -281,7 +282,7 @@
   };
   firebase.initializeApp(firebaseConfig);
 
-  // App Check (reCAPTCHA)
+  // App Check (reCAPTCHA v3): pega aquí tu clave del sitio. Mientras diga 6LcxbR8uAAAAAEAqwvAZUSVKos_C_iConZx4FxEn queda desactivado.
   const RECAPTCHA_SITE_KEY = '6LcxbR8uAAAAAEAqwvAZUSVKos_C_iConZx4FxEn';
   if(RECAPTCHA_SITE_KEY && RECAPTCHA_SITE_KEY.indexOf('PEGA_AQUI') !== 0){
     firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(RECAPTCHA_SITE_KEY), true);
@@ -357,7 +358,6 @@
     const cedula = document.getElementById('cedula').value.trim();
     if(nombre.length < 3 || nombre.length > 120){ alert('Escribe tu nombre completo (mínimo 3 caracteres).'); return; }
     if(cedula.length < 5 || cedula.length > 30){ alert('Revisa tu número de cédula.'); return; }
-
     const t = tipoSeleccionado();
     if(!t){ alert('Selecciona el tipo de entrada.'); return; }
     let entradas;
@@ -444,5 +444,6 @@
   document.addEventListener('pointerdown', primerToque);
   document.addEventListener('keydown', primerToque);
 </script>
+<div class="powered"><span>Powered by</span><img src="logo-alfarys.webp" alt="Alfarys Tech" height="20"></div>
 </body>
 </html>
