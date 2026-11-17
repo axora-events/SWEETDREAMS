@@ -99,9 +99,7 @@
   .wa-link:hover{ text-decoration:underline; }
   .ticket-badge{ display:inline-block; background:rgba(51,85,255,0.15); color:var(--lavender); padding:3px 10px; border-radius:999px; font-size:11.5px; font-weight:700; }
   .admin-count{ font-size:12px; color:var(--muted); margin-bottom:10px; }
-  .type-badge{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; }
-  .type-badge.General{ background:rgba(51,85,255,0.15); color:var(--lavender); }
-  .type-badge.VIP{ background:rgba(239,227,192,0.18); color:var(--gold); }
+  .type-badge{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; background:rgba(51,85,255,0.15); color:var(--lavender); }
   .ref-code{ font-family:monospace; font-size:11.5px; color:var(--muted); }
   .delete-btn{
     background:rgba(244,236,216,0.1); border:1px solid rgba(244,236,216,0.4); color:var(--pink);
@@ -131,7 +129,17 @@
   .ghost-btn{
     background:none; border:1px solid var(--line); color:var(--text); border-radius:8px;
     padding:8px 12px; font-size:12px; cursor:pointer; text-decoration:none; display:inline-block;
+    font-family:'Poppins', sans-serif;
   }
+
+  /* Tipos de entrada */
+  .tipo-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    padding:10px 0; border-bottom:1px solid var(--line); font-size:13px;
+  }
+  .tipo-row:last-child{ border-bottom:none; }
+  .tipo-row.off{ opacity:.55; }
+  .tipo-hint{ font-size:12px; color:var(--muted); margin-bottom:10px; line-height:1.5; }
 
   /* Modal QR */
   .qr-overlay{ display:none; position:fixed; inset:0; background:rgba(8,5,18,0.8); z-index:50; align-items:center; justify-content:center; padding:20px; }
@@ -152,9 +160,6 @@
     background:rgba(51,85,255,0.08); border:1px solid rgba(51,85,255,0.3); color:var(--muted);
     border-radius:10px; padding:12px 14px; font-size:12px; line-height:1.6; margin-top:14px;
   }
-  .powered{ display:flex; align-items:center; justify-content:flex-start; gap:8px; padding:18px 16px 22px; opacity:.75; }
-  .powered span{ font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:#8d86b0; }
-  .powered img{ height:20px; width:auto; display:block; }
 </style>
 </head>
 <body>
@@ -215,6 +220,22 @@
       </div>
     </div>
 
+    <!-- Tipos de entrada -->
+    <div class="card">
+      <div class="section-label">🎟️ Tipos de entrada</div>
+      <div class="tipo-hint">
+        Los tipos <strong>activos</strong> aparecen en el registro. Si desactivas uno, deja de mostrarse pero los QR ya emitidos siguen funcionando.
+        <br>Personas = 1 → entrada individual (el comprador elige cantidad). Personas &gt; 1 → paquete: el precio es del paquete completo y se genera un QR por persona.
+      </div>
+      <div class="filters-row">
+        <input type="text" id="tipoNombre" placeholder="Nombre (ej: General, VIP, Preventa)" maxlength="40">
+        <input type="text" id="tipoPrecio" inputmode="numeric" placeholder="Precio en ₡">
+        <input type="text" id="tipoPersonas" inputmode="numeric" placeholder="Personas (1 = individual)">
+        <button type="button" class="ghost-btn" id="tipoAddBtn">➕ Agregar</button>
+      </div>
+      <div id="tiposList"></div>
+    </div>
+
     <div class="card">
       <div class="section-label">📋 Registros</div>
       <div class="admin-count" id="adminCount">Cargando…</div>
@@ -222,8 +243,6 @@
         <input type="text" id="filterNombre" placeholder="Buscar por nombre…">
         <select id="filterTipo">
           <option value="">Todas las categorías</option>
-          <option value="General">🎟️ General</option>
-          <option value="VIP">👑 VIP</option>
         </select>
         <select id="filterEstado">
           <option value="">Todos los estados</option>
@@ -280,7 +299,7 @@
   };
   firebase.initializeApp(firebaseConfig);
 
-  // App Check (reCAPTCHA v3): pega aquí tu clave del sitio. Mientras diga 6LcxbR8uAAAAAEAqwvAZUSVKos_C_iConZx4FxEn queda desactivado.
+  // App Check (reCAPTCHA)
   const RECAPTCHA_SITE_KEY = '6LcxbR8uAAAAAEAqwvAZUSVKos_C_iConZx4FxEn';
   if(RECAPTCHA_SITE_KEY && RECAPTCHA_SITE_KEY.indexOf('PEGA_AQUI') !== 0){
     firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(RECAPTCHA_SITE_KEY), true);
@@ -333,19 +352,18 @@
     }
   });
 
-  // PRECIOS: precio que se muestra al comprador en el mensaje de WhatsApp.
-  //   General es por entrada. VIP es el paquete completo (cubre hasta 5 personas).
-  const PRECIOS = { General: 5000, VIP: 100000 };
-  // PRECIO_POR_ENTRADA: lo que suma CADA QR individual a las estadísticas de recaudado.
-  //   General: 3.000 por QR (igual al precio). VIP: 20.000 por QR (100.000 / 5 personas),
-  //   así que al generar las 5 entradas del paquete VIP, el recaudado suma exactamente 100.000.
-  const PRECIO_POR_ENTRADA = { General: 5000, VIP: 20000 };
   const SINPE_NUMERO = '85846332';
+
+  // Valores que tenían los registros hechos antes de existir los tipos configurables
+  const LEGACY = { General: { precio: 5000, personas: 1 }, VIP: { precio: 100000, personas: 5 } };
+  const LEGACY_PRECIO_QR = { General: 5000, VIP: 20000 };
 
   let currentRegistrations = [];
   let currentEntradas = [];
+  let currentTipos = [];
   let unsubRegs = null;
   let unsubEnts = null;
+  let unsubTipos = null;
   const generandoIds = new Set();
   let idleTimer = null;
   const IDLE_MS = 30 * 60 * 1000; // cierre automático tras 30 min sin actividad
@@ -357,7 +375,7 @@
   ['click','keydown','touchstart','mousemove'].forEach(ev => document.addEventListener(ev, resetIdle, {passive:true}));
   document.getElementById('logoutBtn').addEventListener('click', () => { auth.signOut(); });
 
-  function formatColones(num){ return '₡' + num.toLocaleString('es-CR'); }
+  function formatColones(num){ return '₡' + Number(num).toLocaleString('es-CR'); }
 
   function formatPhoneForWhatsapp(phone){
     let digits = (phone || '').replace(/\D/g, '');
@@ -365,25 +383,36 @@
     return digits;
   }
 
+  // Datos de compra de un registro (los viejos, sin precio guardado, usan los valores de antes)
+  function infoRegistro(r){
+    const tipo = r.tipo || 'General';
+    const l = LEGACY[tipo] || { precio: 0, personas: 1 };
+    return {
+      tipo,
+      precio: (r.precio != null) ? r.precio : l.precio,
+      personas: (r.personas != null) ? r.personas : l.personas
+    };
+  }
+
   function buildBuyerWhatsappUrl(entry){
     const numero = formatPhoneForWhatsapp(entry.telefono);
-    const tipo = entry.tipo === 'VIP' ? 'VIP' : 'General';
-    const precio = PRECIOS[tipo];
-    const cantidadNum = entry.entradas === '5+' ? 5 : (parseInt(entry.entradas, 10) || 1);
-    // VIP es un paquete de precio fijo (₡100.000, hasta 5 personas), no se multiplica por cantidad.
-    const total = tipo === 'VIP' ? precio : precio * cantidadNum;
-    const totalTexto = (tipo !== 'VIP' && entry.entradas === '5+')
+    const { tipo, precio, personas } = infoRegistro(entry);
+    const esPaquete = personas > 1;
+    const cantidadNum = esPaquete ? personas : (entry.entradas === '5+' ? 5 : (parseInt(entry.entradas, 10) || 1));
+    // Un paquete tiene precio fijo; las entradas individuales se multiplican por la cantidad.
+    const total = esPaquete ? precio : precio * cantidadNum;
+    const totalTexto = (!esPaquete && entry.entradas === '5+')
       ? `${formatColones(total)}+ (a confirmar cantidad exacta)`
       : formatColones(total);
     const posesivo = cantidadNum === 1 ? 'tu' : 'tus';
-    const entradasLabel = entry.entradas === '1' ? '1 entrada' : `${entry.entradas} entradas`;
+    const entradasLabel = cantidadNum === 1 ? '1 entrada' : `${entry.entradas} entradas`;
 
-    const lineasPrecio = tipo === 'VIP'
-      ? [`-Tipo de entrada: VIP (paquete hasta 5 personas)`, `-Precio del paquete: ${formatColones(precio)}`]
+    const lineasPrecio = esPaquete
+      ? [`-Tipo de entrada: ${tipo} (paquete hasta ${personas} personas)`, `-Precio del paquete: ${formatColones(precio)}`]
       : [`-Tipo de entrada: ${tipo}`, `-Precio por entrada: ${formatColones(precio)}`];
 
     const lineas = [
-      '¡Hola!', 'Te escribo por tu registro para AXORA Sweet Dreams.', '',
+      '¡Hola!', 'Te escribo por tu registro para BrukOff Sweet Dreams.', '',
       `Quiero confirmar la compra de ${posesivo} ${entradasLabel}:`,
       ...lineasPrecio,
       `-Total: ${totalTexto}`, `-Número de referencia: ${entry.referencia || '—'}`, '',
@@ -411,9 +440,12 @@
 
   async function generarEntradaParaRegistro(registro){
     const codigo = generarCodigoEntrada();
+    const info = infoRegistro(registro);
     const entradaDoc = {
       codigo, registroId: registro.id, nombre: registro.nombre || '',
-      telefono: registro.telefono || '', tipo: registro.tipo || 'General',
+      telefono: registro.telefono || '', tipo: info.tipo,
+      // Lo que aporta este QR al recaudado (paquete: precio / personas)
+      precioQr: Math.round(info.precio / (info.personas || 1)),
       estado: 'activa', emitidaEn: new Date().toISOString(), usadaEn: null, validadoPor: null
     };
     await db.collection('entradas').doc(codigo).set(entradaDoc);
@@ -479,7 +511,7 @@
 
     const numero = formatPhoneForWhatsapp(registro.telefono);
     const mensaje = [
-      `¡Tu entrada para AXORA Sweet Dreams está confirmada! `, '',
+      `¡Tu entrada para BrukOff Sweet Dreams está confirmada! `, '',
       `Código de tu entrada: ${entrada.codigo}`, `Categoría: ${entrada.tipo}`, '',
       'Te adjunto tu código QR — muéstralo en la entrada del evento junto a tu identificación.',
       'Guárdalo, es único y personal, no lo compartas.'
@@ -508,7 +540,86 @@
   const adminRows = document.getElementById('adminRows');
   const adminCount = document.getElementById('adminCount');
 
-  function refreshStatsAndTable(){ renderStats(); renderFilteredRows(); }
+  // ===== Tipos de entrada =====
+  function nombresDeTipo(){
+    const s = new Set(currentTipos.map(t => t.nombre));
+    currentRegistrations.forEach(r => s.add(r.tipo || 'General'));
+    currentEntradas.forEach(e => s.add(e.tipo || 'General'));
+    return [...s];
+  }
+
+  function renderFiltroTipos(){
+    const prev = filterTipo.value;
+    filterTipo.innerHTML = '<option value="">Todas las categorías</option>' +
+      nombresDeTipo().map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+    filterTipo.value = prev;
+  }
+
+  function renderTiposAdmin(){
+    const cont = document.getElementById('tiposList');
+    if(!currentTipos.length){
+      cont.innerHTML = '<div class="tipo-hint">Aún no hay tipos de entrada. Agrega el primero arriba (el registro no mostrará entradas hasta entonces).</div>';
+      return;
+    }
+    cont.innerHTML = currentTipos.map(t => `
+      <div class="tipo-row ${t.activo ? '' : 'off'}">
+        <div>
+          <strong>${escapeHtml(t.nombre)}</strong> — ${formatColones(t.precio)}
+          ${t.personas > 1 ? `(paquete de ${t.personas} personas)` : 'por persona'}
+          · <span class="status-badge ${t.activo ? 'confirmado' : 'pendiente'}">${t.activo ? 'Visible en registro' : 'Oculto'}</span>
+        </div>
+        <div class="action-cell">
+          <button type="button" class="confirm-btn" data-tipo-action="toggle" data-id="${escapeHtml(t.id)}">${t.activo ? '⏸️ Desactivar' : '▶️ Activar'}</button>
+          <button type="button" class="ghost-btn" data-tipo-action="precio" data-id="${escapeHtml(t.id)}">✏️ Precio</button>
+          <button type="button" class="delete-btn" data-tipo-action="borrar" data-id="${escapeHtml(t.id)}">🗑️</button>
+        </div>
+      </div>`).join('');
+  }
+
+  document.getElementById('tipoAddBtn').addEventListener('click', async () => {
+    const nombre = document.getElementById('tipoNombre').value.trim();
+    const precio = parseInt(document.getElementById('tipoPrecio').value.replace(/\D/g, ''), 10);
+    const personas = parseInt(document.getElementById('tipoPersonas').value.replace(/\D/g, ''), 10) || 1;
+    if(nombre.length < 2 || !(precio > 0)){ alert('Escribe un nombre y un precio válido.'); return; }
+    if(personas < 1 || personas > 50){ alert('Las personas deben estar entre 1 y 50.'); return; }
+    if(currentTipos.some(t => t.nombre.toLowerCase() === nombre.toLowerCase())){
+      alert('Ya existe un tipo con ese nombre.'); return;
+    }
+    try{
+      await db.collection('tipos_entrada').add({ nombre, precio, personas, activo: true, orden: Date.now() });
+      ['tipoNombre','tipoPrecio','tipoPersonas'].forEach(id => { document.getElementById(id).value = ''; });
+    }catch(err){
+      console.error('Error al guardar el tipo de entrada', err);
+      alert('No se pudo guardar el tipo de entrada.');
+    }
+  });
+
+  document.getElementById('tiposList').addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('button[data-tipo-action]');
+    if(!btn) return;
+    const t = currentTipos.find(x => x.id === btn.dataset.id);
+    if(!t) return;
+    const ref = db.collection('tipos_entrada').doc(t.id);
+    try{
+      if(btn.dataset.tipoAction === 'toggle'){
+        await ref.update({ activo: !t.activo });
+      }else if(btn.dataset.tipoAction === 'precio'){
+        const v = prompt(`Nuevo precio para "${t.nombre}" (solo afecta registros nuevos):`, t.precio);
+        if(v === null) return;
+        const n = parseInt(v.replace(/\D/g, ''), 10);
+        if(n > 0) await ref.update({ precio: n }); else alert('Precio no válido.');
+      }else if(btn.dataset.tipoAction === 'borrar'){
+        if(confirm(`¿Borrar el tipo "${t.nombre}"? Los registros y QR existentes no se afectan. Si solo quieres ocultarlo, usa Desactivar.`)){
+          await ref.delete();
+        }
+      }
+    }catch(err){
+      console.error('Error en acción de tipo de entrada', err);
+      alert('No se pudo completar la acción.');
+    }
+  });
+
+  function refreshStatsAndTable(){ renderFiltroTipos(); renderStats(); renderFilteredRows(); }
 
   function renderStats(){
     const confirmadas = currentEntradas.length;
@@ -517,7 +628,7 @@
     let activas = 0, usadas = 0;
     currentEntradas.forEach(e => {
       const tipo = e.tipo || 'General';
-      totalMonto += (PRECIO_POR_ENTRADA[tipo] || 0);
+      totalMonto += (e.precioQr != null) ? e.precioQr : (LEGACY_PRECIO_QR[tipo] || 0);
       porTipo[tipo] = (porTipo[tipo] || 0) + 1;
       if(e.estado === 'usada') usadas++; else activas++;
     });
@@ -528,8 +639,7 @@
     document.getElementById('statUsadas').textContent = usadas;
 
     const breakdownWrap = document.getElementById('breakdownWrap');
-    const tipos = Object.keys(PRECIOS);
-    breakdownWrap.innerHTML = tipos.map(tipo => {
+    breakdownWrap.innerHTML = nombresDeTipo().map(tipo => {
       const count = porTipo[tipo] || 0;
       const pct = confirmadas ? Math.round((count / confirmadas) * 100) : 0;
       return `<div class="breakdown-row"><span>${escapeHtml(tipo)}</span><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;"></div></div><span>${count}</span></div>`;
@@ -577,7 +687,7 @@
         <td class="name-cell">${escapeHtml(e.nombre||'')}</td>
         <td><a class="wa-link" href="${escapeHtml(buildBuyerWhatsappUrl(e))}" target="_blank" rel="noopener">📲 ${escapeHtml(e.telefono||'')}</a></td>
         <td>${escapeHtml(e.cedula||'')}</td>
-        <td><span class="type-badge ${escapeHtml(e.tipo||'General')}">${escapeHtml(e.tipo||'General')}</span></td>
+        <td><span class="type-badge">${escapeHtml(e.tipo||'General')}</span></td>
         <td><span class="ticket-badge">${escapeHtml(e.entradas||'')}</span></td>
         <td><span class="status-badge ${estado}">${estadoLabel(estado)} (${generadas}/${solicitadas})</span></td>
         <td><span class="ref-code">${escapeHtml(e.referencia||'—')}</span></td>
@@ -663,7 +773,7 @@
       alert(`Se borraron ${huerfanas.length} entrada(s) huérfana(s). Las estadísticas ya quedaron correctas.`);
     }catch(err){
       console.error('Error al limpiar entradas huérfanas', err);
-      alert('No se pudo completar la limpieza.\n\nDetalle técnico: ' + (err && (err.code || err.message) ? (err.code || '') + ' ' + (err.message || '') : 'error desconocido') + '\n\nRevisa la consola del navegador (F12) para más detalle, o mándame este mensaje.');
+      alert('No se pudo completar la limpieza.\n\nDetalle técnico: ' + (err && (err.code || err.message) ? (err.code || '') + ' ' + (err.message || '') : 'error desconocido') + '\n\nRevisa la consola del navegador (F12) para más detalle.');
     }finally{
       cleanupBtn.disabled = false;
       cleanupBtn.textContent = '🧹 Limpiar entradas huérfanas';
@@ -673,6 +783,7 @@
   function detenerListeners(){
     if(unsubRegs){ unsubRegs(); unsubRegs = null; }
     if(unsubEnts){ unsubEnts(); unsubEnts = null; }
+    if(unsubTipos){ unsubTipos(); unsubTipos = null; }
   }
 
   // Escucha en tiempo real: solo lee los cambios, no toda la base cada pocos segundos.
@@ -694,9 +805,17 @@
       if(!auth.currentUser) return;
       console.error('Error al leer entradas', err);
     });
+    unsubTipos = db.collection('tipos_entrada').onSnapshot((snap) => {
+      currentTipos = snap.docs.map(d => ({ id: d.id, personas: 1, ...d.data() }))
+        .sort((a, b) => (a.orden || 0) - (b.orden || 0));
+      renderTiposAdmin();
+      refreshStatsAndTable();
+    }, (err) => {
+      if(!auth.currentUser) return;
+      console.error('Error al leer tipos de entrada', err);
+    });
   }
 
 </script>
-<div class="powered"><span>Powered by</span><img src="logo-alfarys.webp" alt="Alfarys Tech" height="20"></div>
 </body>
 </html>
