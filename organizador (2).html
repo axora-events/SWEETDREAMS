@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sweet Dreams — Panel organizador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-check-compat.js"></script>
+<script src="qrcode.min.js"></script>
+<style>
+  :root{
+    --bg-deep:#0B1440; --bg-card:#12205C; --bg-field:#1B2C78;
+    --lavender:#3355FF; --pink:#F4ECD8; --gold:#EFE3C0;
+    --text:#F4ECD8; --muted:#9FB0E8; --line:#28399E;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% 8%, rgba(244,236,216,0.16), transparent 40%),
+      radial-gradient(circle at 85% 0%, rgba(51,85,255,0.20), transparent 45%),
+      var(--bg-deep);
+    color:var(--text); font-family:'Poppins', sans-serif; min-height:100vh; padding:0 0 60px;
+  }
+  header.top{
+    padding:26px 20px 18px; text-align:center;
+    background:linear-gradient(180deg, #16226B 0%, #0B1440 100%);
+    border-bottom:1px solid var(--line);
+  }
+  header.top h1{
+    font-family:'Bebas Neue', sans-serif; font-size:clamp(30px,7vw,42px);
+    letter-spacing:.04em; margin:0;
+    color:var(--text);
+  }
+  header.top p{ color:var(--muted); font-size:12.5px; margin:6px 0 0; }
+  header.top a.back{ color:var(--muted); font-size:12px; text-decoration:underline; }
+
+  .wrap{ max-width:920px; margin:0 auto; padding:18px 18px 0; }
+  .card{
+    background:var(--bg-card); border:1px solid var(--line); border-radius:18px;
+    padding:22px; margin-top:16px; box-shadow:0 20px 50px rgba(0,0,0,.35);
+  }
+  .section-label{
+    display:flex; align-items:center; gap:8px; font-size:12.5px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--gold); font-weight:700; margin-bottom:16px;
+  }
+  label{ display:block; font-size:14px; font-weight:600; margin:12px 0 8px; }
+  input[type="text"], input[type="password"]{
+    width:100%; background:var(--bg-field); border:1px solid var(--line); border-radius:10px;
+    padding:12px 13px; color:var(--text); font-family:'Poppins', sans-serif; font-size:14.5px; outline:none;
+  }
+  input:focus{ border-color:var(--lavender); box-shadow:0 0 0 3px rgba(51,85,255,0.18); }
+  .submit-btn{
+    width:100%; margin-top:14px; padding:14px; border:none; border-radius:12px;
+    background:var(--text); color:var(--bg-deep);
+    font-family:'Poppins', sans-serif; font-weight:700; font-size:15px; cursor:pointer;
+  }
+  .error-text{ color:var(--pink); font-size:12px; margin-top:8px; min-height:14px; }
+
+  /* Stats */
+  .stats-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:6px; }
+  .stat-card{ background:var(--bg-field); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  .stat-card .stat-label{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px; font-weight:700; }
+  .stat-card .stat-value{ font-family:'Bebas Neue', sans-serif; font-size:28px; letter-spacing:.02em; color:var(--text); }
+  .stat-card.money .stat-value{ color:var(--gold); }
+  .stat-card.tickets .stat-value{ color:var(--lavender); }
+  .breakdown-row{ display:flex; justify-content:space-between; align-items:center; font-size:12.5px; padding:5px 0; }
+  .breakdown-row .bar-bg{ flex:1; height:6px; background:var(--bg-deep); border-radius:99px; margin:0 8px; overflow:hidden; }
+  .breakdown-row .bar-fill{ height:100%; border-radius:99px; background:var(--lavender); }
+
+  /* Filtros */
+  .filters-row{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+  .filters-row select, .filters-row input{
+    flex:1; min-width:140px; background:var(--bg-field); border:1px solid var(--line); color:var(--text);
+    font-family:'Poppins', sans-serif; font-size:12.5px; padding:9px 10px; border-radius:8px; outline:none;
+  }
+
+  /* Tabla */
+  .admin-table-wrap{ overflow-x:auto; border-radius:10px; }
+  table{ width:100%; border-collapse:separate; border-spacing:0; font-size:12.5px; }
+  thead th{
+    text-align:left; padding:10px 10px; background:rgba(239,227,192,0.08); color:var(--gold);
+    font-weight:700; font-size:11px; letter-spacing:.06em; text-transform:uppercase; white-space:nowrap;
+  }
+  thead th:first-child{ border-radius:8px 0 0 8px; }
+  thead th:last-child{ border-radius:0 8px 8px 0; }
+  td{ padding:11px 10px; border-bottom:1px solid var(--line); vertical-align:middle; color:var(--text); }
+  tbody tr:nth-child(even) td{ background:rgba(255,255,255,0.025); }
+  tbody tr:hover td{ background:rgba(51,85,255,0.06); }
+  tbody tr:last-child td{ border-bottom:none; }
+  .name-cell{ font-weight:600; }
+  .wa-link{ display:inline-flex; align-items:center; gap:5px; color:#25D366; text-decoration:none; font-weight:700; white-space:nowrap; }
+  .wa-link:hover{ text-decoration:underline; }
+  .ticket-badge{ display:inline-block; background:rgba(51,85,255,0.15); color:var(--lavender); padding:3px 10px; border-radius:999px; font-size:11.5px; font-weight:700; }
+  .admin-count{ font-size:12px; color:var(--muted); margin-bottom:10px; }
+  .type-badge{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; }
+  .type-badge.General{ background:rgba(51,85,255,0.15); color:var(--lavender); }
+  .type-badge.VIP{ background:rgba(239,227,192,0.18); color:var(--gold); }
+  .ref-code{ font-family:monospace; font-size:11.5px; color:var(--muted); }
+  .delete-btn{
+    background:rgba(244,236,216,0.1); border:1px solid rgba(244,236,216,0.4); color:var(--pink);
+    border-radius:8px; padding:6px 10px; font-size:11.5px; font-weight:700; cursor:pointer; white-space:nowrap;
+  }
+  .delete-btn:hover{ background:rgba(244,236,216,0.22); }
+  .delete-btn:disabled{ opacity:.5; cursor:default; }
+  .confirm-btn{
+    background:rgba(51,85,255,0.14); border:1px solid rgba(51,85,255,0.45); color:var(--lavender);
+    border-radius:8px; padding:6px 10px; font-size:11.5px; font-weight:700; cursor:pointer; white-space:nowrap; margin-right:6px;
+  }
+  .confirm-btn:hover{ background:rgba(51,85,255,0.26); }
+  .confirm-btn:disabled{ opacity:.5; cursor:default; }
+  .action-cell{ display:flex; gap:6px; flex-wrap:wrap; }
+  .status-badge{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; white-space:nowrap; }
+  .status-badge.pendiente{ background:rgba(156,143,194,0.18); color:var(--muted); }
+  .status-badge.confirmado{ background:rgba(80,220,150,0.15); color:#4ADE80; }
+  .status-badge.parcial{ background:rgba(239,227,192,0.15); color:var(--gold); }
+
+  .top-actions{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:4px; }
+  .danger-btn{
+    background:rgba(255,90,90,0.12); border:1px solid rgba(255,90,90,0.5); color:#FF8A8A;
+    border-radius:8px; padding:8px 12px; font-size:12px; cursor:pointer; font-family:'Poppins', sans-serif;
+  }
+  .danger-btn:hover{ background:rgba(255,90,90,0.22); }
+  .danger-btn:disabled{ opacity:.5; cursor:default; }
+  .ghost-btn{
+    background:none; border:1px solid var(--line); color:var(--text); border-radius:8px;
+    padding:8px 12px; font-size:12px; cursor:pointer; text-decoration:none; display:inline-block;
+  }
+
+  /* Modal QR */
+  .qr-overlay{ display:none; position:fixed; inset:0; background:rgba(8,5,18,0.8); z-index:50; align-items:center; justify-content:center; padding:20px; }
+  .qr-modal{ background:var(--bg-card); border:1px solid var(--line); border-radius:16px; padding:24px; max-width:340px; width:100%; text-align:center; }
+  .qr-modal h3{ font-family:'Bebas Neue',sans-serif; font-size:26px; margin:0 0 4px; }
+  .qr-modal .qr-code-text{ font-family:monospace; font-size:12px; color:var(--muted); margin-bottom:14px; word-break:break-all; }
+  #qrCanvasWrap{ background:#fff; border-radius:12px; padding:14px; display:inline-block; margin-bottom:14px; }
+  .qr-modal-actions{ display:flex; gap:8px; margin-top:6px; }
+  .qr-modal-actions button, .qr-modal-actions a{
+    flex:1; padding:11px; border-radius:10px; border:1px solid var(--line); background:var(--bg-field); color:var(--text);
+    font-size:12.5px; font-weight:700; cursor:pointer; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:5px;
+  }
+  .qr-modal-actions button.wa-send{ background:rgba(37,211,102,0.14); border-color:rgba(37,211,102,0.4); color:#25D366; }
+  .qr-modal-actions button:disabled{ opacity:.6; cursor:default; }
+  .qr-close{ margin-top:14px; background:none; border:none; color:var(--muted); font-size:12px; cursor:pointer; text-decoration:underline; }
+
+  .security-note{
+    background:rgba(51,85,255,0.08); border:1px solid rgba(51,85,255,0.3); color:var(--muted);
+    border-radius:10px; padding:12px 14px; font-size:12px; line-height:1.6; margin-top:14px;
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>Panel organizador</h1>
+  <p>Sweet Dreams · 19 dic 2026 · Rancho Agüeros · 9:00 PM · <a class="back" href="index.html">← Volver al registro</a></p>
+</header>
+
+<div class="wrap">
+
+  <!-- PIN gate -->
+  <div class="card" id="pinGate">
+    <div class="section-label">🔒 Acceso organizador</div>
+    <label style="margin-top:0;">Contraseña</label>
+    <input type="password" id="pinInput" placeholder="Ingresa la contraseña" autocomplete="off">
+    <div class="error-text" id="pinError"></div>
+    <button type="button" class="submit-btn" id="pinSubmit">Entrar</button>
+    <div class="security-note">
+      Acceso solo para organizadores.
+    </div>
+  </div>
+
+  <!-- Panel -->
+  <div id="adminPanel" style="display:none;">
+
+    <div class="card">
+      <div class="top-actions">
+        <div class="section-label" style="margin-bottom:0;">📊 Resumen</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <a class="ghost-btn" href="validar.html" target="_blank" rel="noopener noreferrer">📷 Ir a validar entradas</a>
+          <button type="button" class="ghost-btn" id="refreshAdmin">🔄 Actualizar</button>
+          <button type="button" class="ghost-btn" id="logoutBtn">🔒 Cerrar sesión</button>
+          <button type="button" class="danger-btn" id="cleanupBtn">🧹 Limpiar entradas huérfanas</button>
+        </div>
+      </div>
+      <div class="stats-grid" style="margin-top:14px;">
+        <div class="stat-card tickets">
+          <div class="stat-label">Entradas confirmadas</div>
+          <div class="stat-value" id="statEntradas">0</div>
+        </div>
+        <div class="stat-card money">
+          <div class="stat-label">Recaudado</div>
+          <div class="stat-value" id="statMonto">₡0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Entradas activas (sin usar)</div>
+          <div class="stat-value" id="statActivas">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Entradas ya usadas</div>
+          <div class="stat-value" id="statUsadas">0</div>
+        </div>
+      </div>
+      <div class="stat-card" style="margin-top:10px;">
+        <div class="stat-label">Desglose por categoría</div>
+        <div id="breakdownWrap"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">📋 Registros</div>
+      <div class="admin-count" id="adminCount">Cargando…</div>
+      <div class="filters-row">
+        <input type="text" id="filterNombre" placeholder="Buscar por nombre…">
+        <select id="filterTipo">
+          <option value="">Todas las categorías</option>
+          <option value="General">🎟️ General</option>
+          <option value="VIP">👑 VIP</option>
+        </select>
+        <select id="filterEstado">
+          <option value="">Todos los estados</option>
+          <option value="pendiente">⏳ Pendiente</option>
+          <option value="parcial">🟡 Parcialmente confirmado</option>
+          <option value="confirmado">✅ Confirmado</option>
+        </select>
+        <input type="text" id="filterFecha" placeholder="Buscar fecha (dd/mm/aaaa)">
+      </div>
+      <div class="admin-table-wrap">
+        <table>
+          <thead><tr>
+            <th>Nombre</th><th>Teléfono</th><th>Cédula</th><th>Cat.</th><th>Ent.</th>
+            <th>Estado</th><th>Referencia</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="adminRows"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal QR -->
+<div class="qr-overlay" id="qrOverlay">
+  <div class="qr-modal">
+    <h3>🎫 Entrada generada</h3>
+    <div class="qr-code-text" id="qrCodeText"></div>
+    <div id="qrCanvasWrap"></div>
+    <div class="qr-modal-actions">
+      <button type="button" id="qrDownloadBtn">⬇️ Descargar</button>
+      <button type="button" id="qrWhatsappBtn" class="wa-send">📲 Enviar</button>
+    </div>
+    <p class="hint" style="margin-top:8px;color:var(--muted);font-size:12px;">WhatsApp no permite adjuntar imágenes automáticamente desde un link — al presionar "Enviar" se descarga el QR y se abre el chat; solo debes adjuntar la imagen ya descargada.</p>
+    <button type="button" class="qr-close" id="qrCloseBtn">Cerrar</button>
+  </div>
+</div>
+
+<script>
+  // Escapa también comillas: seguro para texto y para atributos HTML.
+  function escapeHtml(str){
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCxW7bSCZafZ3QydThF_Kln_OS3FD3aQ2Y",
+    authDomain: "sweet-dreams-51493.firebaseapp.com",
+    projectId: "sweet-dreams-51493",
+    storageBucket: "sweet-dreams-51493.firebasestorage.app",
+    messagingSenderId: "609888686575",
+    appId: "1:609888686575:web:af9b844059f79e0ad6661a"
+  };
+  firebase.initializeApp(firebaseConfig);
+
+  // App Check (reCAPTCHA v3): pega aquí tu clave del sitio. Mientras diga 6LcxbR8uAAAAAEAqwvAZUSVKos_C_iConZx4FxEn queda desactivado.
+  const RECAPTCHA_SITE_KEY = '6LcxbR8uAAAAAEAqwvAZUSVKos_C_iConZx4FxEn';
+  if(RECAPTCHA_SITE_KEY && RECAPTCHA_SITE_KEY.indexOf('PEGA_AQUI') !== 0){
+    firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(RECAPTCHA_SITE_KEY), true);
+  }
+  const db = firebase.firestore();
+
+  const ACCESS_EMAIL = 'organizador@sweetdreams.com';
+  const auth = firebase.auth();
+  // La sesión vive solo en esta pestaña: al cerrarla, se cierra la sesión.
+  const persistenciaLista = auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {});
+
+  const pinGate = document.getElementById('pinGate');
+  const pinInput = document.getElementById('pinInput');
+  const pinSubmit = document.getElementById('pinSubmit');
+  const pinError = document.getElementById('pinError');
+  const adminPanel = document.getElementById('adminPanel');
+
+  async function checkPin(){
+    if(!pinInput.value) return;
+    pinSubmit.disabled = true;
+    pinError.textContent = '';
+    try{
+      await persistenciaLista;
+      await auth.signInWithEmailAndPassword(ACCESS_EMAIL, pinInput.value);
+    }catch(err){
+      if(err && err.code === 'auth/too-many-requests'){
+        pinError.textContent = 'Demasiados intentos. Espera unos minutos e intenta de nuevo.';
+      }else{
+        pinError.textContent = 'Contraseña incorrecta, intenta de nuevo.';
+      }
+    }finally{
+      pinInput.value = '';
+      pinSubmit.disabled = false;
+    }
+  }
+  pinSubmit.addEventListener('click', checkPin);
+  pinInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') checkPin(); });
+
+  auth.onAuthStateChanged((user) => {
+    if(user){
+      pinGate.style.display = 'none';
+      adminPanel.style.display = 'block';
+      openAdmin();
+      resetIdle();
+    }else{
+      adminPanel.style.display = 'none';
+      pinGate.style.display = 'block';
+      detenerListeners();
+      if(idleTimer){ clearTimeout(idleTimer); idleTimer = null; }
+    }
+  });
+
+  // PRECIOS: precio que se muestra al comprador en el mensaje de WhatsApp.
+  //   General es por entrada. VIP es el paquete completo (cubre hasta 5 personas).
+  const PRECIOS = { General: 5000, VIP: 100000 };
+  // PRECIO_POR_ENTRADA: lo que suma CADA QR individual a las estadísticas de recaudado.
+  //   General: 3.000 por QR (igual al precio). VIP: 20.000 por QR (100.000 / 5 personas),
+  //   así que al generar las 5 entradas del paquete VIP, el recaudado suma exactamente 100.000.
+  const PRECIO_POR_ENTRADA = { General: 5000, VIP: 20000 };
+  const SINPE_NUMERO = '85846332';
+
+  let currentRegistrations = [];
+  let currentEntradas = [];
+  let unsubRegs = null;
+  let unsubEnts = null;
+  const generandoIds = new Set();
+  let idleTimer = null;
+  const IDLE_MS = 30 * 60 * 1000; // cierre automático tras 30 min sin actividad
+  function resetIdle(){
+    if(!auth.currentUser) return;
+    if(idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => { auth.signOut(); }, IDLE_MS);
+  }
+  ['click','keydown','touchstart','mousemove'].forEach(ev => document.addEventListener(ev, resetIdle, {passive:true}));
+  document.getElementById('logoutBtn').addEventListener('click', () => { auth.signOut(); });
+
+  function formatColones(num){ return '₡' + num.toLocaleString('es-CR'); }
+
+  function formatPhoneForWhatsapp(phone){
+    let digits = (phone || '').replace(/\D/g, '');
+    if(digits.length === 8) digits = '506' + digits;
+    return digits;
+  }
+
+  function buildBuyerWhatsappUrl(entry){
+    const numero = formatPhoneForWhatsapp(entry.telefono);
+    const tipo = entry.tipo === 'VIP' ? 'VIP' : 'General';
+    const precio = PRECIOS[tipo];
+    const cantidadNum = entry.entradas === '5+' ? 5 : (parseInt(entry.entradas, 10) || 1);
+    // VIP es un paquete de precio fijo (₡100.000, hasta 5 personas), no se multiplica por cantidad.
+    const total = tipo === 'VIP' ? precio : precio * cantidadNum;
+    const totalTexto = (tipo !== 'VIP' && entry.entradas === '5+')
+      ? `${formatColones(total)}+ (a confirmar cantidad exacta)`
+      : formatColones(total);
+    const posesivo = cantidadNum === 1 ? 'tu' : 'tus';
+    const entradasLabel = entry.entradas === '1' ? '1 entrada' : `${entry.entradas} entradas`;
+
+    const lineasPrecio = tipo === 'VIP'
+      ? [`-Tipo de entrada: VIP (paquete hasta 5 personas)`, `-Precio del paquete: ${formatColones(precio)}`]
+      : [`-Tipo de entrada: ${tipo}`, `-Precio por entrada: ${formatColones(precio)}`];
+
+    const lineas = [
+      '¡Hola!', 'Te escribo por tu registro para BrukOff Sweet Dreams.', '',
+      `Quiero confirmar la compra de ${posesivo} ${entradasLabel}:`,
+      ...lineasPrecio,
+      `-Total: ${totalTexto}`, `-Número de referencia: ${entry.referencia || '—'}`, '',
+      `Para realizar el pago, el número de SINPE es: ${SINPE_NUMERO}. *Por favor agrega el número de referencia en el detalle del SINPE.*`, '',
+      'Cuando lo realices, te pido por favor que me envíes el comprobante de pago. ', '', '¡Muchas gracias! '
+    ];
+    return `https://wa.me/${numero}?text=${encodeURIComponent(lineas.join('\n'))}`;
+  }
+
+  function entradasGeneradasPara(registroId){
+    return currentEntradas.filter(e => e.registroId === registroId);
+  }
+  function cantidadSolicitada(entradasStr){
+    return entradasStr === '5+' ? 5 : (parseInt(entradasStr, 10) || 1);
+  }
+
+  function generarCodigoEntrada(){
+    if(window.crypto && crypto.randomUUID){
+      return 'SDQ-' + crypto.randomUUID().replace(/-/g,'').toUpperCase().slice(0,16);
+    }
+    const bytes = new Uint8Array(12);
+    crypto.getRandomValues(bytes);
+    return 'SDQ-' + Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join('').toUpperCase();
+  }
+
+  async function generarEntradaParaRegistro(registro){
+    const codigo = generarCodigoEntrada();
+    const entradaDoc = {
+      codigo, registroId: registro.id, nombre: registro.nombre || '',
+      telefono: registro.telefono || '', tipo: registro.tipo || 'General',
+      estado: 'activa', emitidaEn: new Date().toISOString(), usadaEn: null, validadoPor: null
+    };
+    await db.collection('entradas').doc(codigo).set(entradaDoc);
+    return entradaDoc;
+  }
+
+  async function confirmarPago(registro, btnEl){
+    const yaGeneradas = entradasGeneradasPara(registro.id).length;
+    const totalSolicitado = cantidadSolicitada(registro.entradas);
+    if(yaGeneradas >= totalSolicitado){
+      alert('Este registro ya tiene todas sus entradas generadas.');
+      return;
+    }
+    if(generandoIds.has(registro.id)) return;
+    generandoIds.add(registro.id);
+    if(btnEl){ btnEl.disabled = true; btnEl.textContent = 'Generando…'; }
+    try{
+      const nuevaEntrada = await generarEntradaParaRegistro(registro);
+      refreshStatsAndTable();
+      mostrarModalQR(nuevaEntrada, registro);
+    }catch(err){
+      console.error('Error al generar la entrada', err);
+      alert('No se pudo generar la entrada. Intenta de nuevo.');
+    }finally{
+      generandoIds.delete(registro.id);
+      if(btnEl){ btnEl.disabled = false; }
+      refreshStatsAndTable();
+    }
+  }
+
+  const qrOverlay = document.getElementById('qrOverlay');
+  const qrCodeText = document.getElementById('qrCodeText');
+  const qrCanvasWrap = document.getElementById('qrCanvasWrap');
+  const qrDownloadBtn = document.getElementById('qrDownloadBtn');
+  const qrWhatsappBtn = document.getElementById('qrWhatsappBtn');
+  const qrCloseBtn = document.getElementById('qrCloseBtn');
+
+  function mostrarModalQR(entrada, registro){
+    qrCodeText.textContent = entrada.codigo;
+    qrCanvasWrap.innerHTML = '';
+    new QRCode(qrCanvasWrap, {
+      text: entrada.codigo, width: 210, height: 210,
+      colorDark: '#170F2E', colorLight: '#ffffff'
+    });
+
+    function getQrImageEl(){
+      return qrCanvasWrap.querySelector('img') || qrCanvasWrap.querySelector('canvas');
+    }
+    function descargarQR(){
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const img = getQrImageEl();
+          if(!img){ resolve(false); return; }
+          const link = document.createElement('a');
+          link.download = `entrada-${entrada.codigo}.png`;
+          link.href = img.tagName === 'CANVAS' ? img.toDataURL('image/png') : img.src;
+          link.click();
+          resolve(true);
+        }, 150);
+      });
+    }
+    qrDownloadBtn.onclick = () => { descargarQR(); };
+
+    const numero = formatPhoneForWhatsapp(registro.telefono);
+    const mensaje = [
+      `¡Tu entrada para BrukOff Sweet Dreams está confirmada! `, '',
+      `Código de tu entrada: ${entrada.codigo}`, `Categoría: ${entrada.tipo}`, '',
+      'Te adjunto tu código QR — muéstralo en la entrada del evento junto a tu identificación.',
+      'Guárdalo, es único y personal, no lo compartas.'
+    ].join('\n');
+    const waUrl = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
+
+    qrWhatsappBtn.onclick = async () => {
+      qrWhatsappBtn.disabled = true;
+      qrWhatsappBtn.textContent = 'Descargando QR…';
+      const ok = await descargarQR();
+      qrWhatsappBtn.disabled = false;
+      qrWhatsappBtn.textContent = '📲 Enviar';
+      if(!ok){ alert('No se pudo preparar la imagen del QR. Intenta descargarlo con el otro botón.'); return; }
+      window.open(waUrl, '_blank', 'noopener');
+    };
+
+    qrOverlay.style.display = 'flex';
+  }
+  qrCloseBtn.addEventListener('click', () => { qrOverlay.style.display = 'none'; });
+  qrOverlay.addEventListener('click', (e) => { if(e.target === qrOverlay) qrOverlay.style.display = 'none'; });
+
+  const filterNombre = document.getElementById('filterNombre');
+  const filterTipo = document.getElementById('filterTipo');
+  const filterEstado = document.getElementById('filterEstado');
+  const filterFecha = document.getElementById('filterFecha');
+  const adminRows = document.getElementById('adminRows');
+  const adminCount = document.getElementById('adminCount');
+
+  function refreshStatsAndTable(){ renderStats(); renderFilteredRows(); }
+
+  function renderStats(){
+    const confirmadas = currentEntradas.length;
+    let totalMonto = 0;
+    const porTipo = {};
+    let activas = 0, usadas = 0;
+    currentEntradas.forEach(e => {
+      const tipo = e.tipo || 'General';
+      totalMonto += (PRECIO_POR_ENTRADA[tipo] || 0);
+      porTipo[tipo] = (porTipo[tipo] || 0) + 1;
+      if(e.estado === 'usada') usadas++; else activas++;
+    });
+
+    document.getElementById('statEntradas').textContent = confirmadas;
+    document.getElementById('statMonto').textContent = formatColones(totalMonto);
+    document.getElementById('statActivas').textContent = activas;
+    document.getElementById('statUsadas').textContent = usadas;
+
+    const breakdownWrap = document.getElementById('breakdownWrap');
+    const tipos = Object.keys(PRECIOS);
+    breakdownWrap.innerHTML = tipos.map(tipo => {
+      const count = porTipo[tipo] || 0;
+      const pct = confirmadas ? Math.round((count / confirmadas) * 100) : 0;
+      return `<div class="breakdown-row"><span>${escapeHtml(tipo)}</span><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;"></div></div><span>${count}</span></div>`;
+    }).join('');
+  }
+
+  function estadoRegistro(registro){
+    const generadas = entradasGeneradasPara(registro.id).length;
+    const solicitadas = cantidadSolicitada(registro.entradas);
+    if(generadas === 0) return 'pendiente';
+    if(generadas < solicitadas) return 'parcial';
+    return 'confirmado';
+  }
+
+  function estadoLabel(estado){
+    if(estado === 'confirmado') return '✅ Confirmado';
+    if(estado === 'parcial') return '🟡 Parcial';
+    return '⏳ Pendiente';
+  }
+
+  function renderFilteredRows(){
+    const nombreVal = (filterNombre.value || '').trim().toLowerCase();
+    const tipoVal = filterTipo.value;
+    const estadoVal = filterEstado.value;
+    const fechaVal = (filterFecha.value || '').trim();
+
+    const filtered = currentRegistrations.filter(e => {
+      if(nombreVal && !(e.nombre || '').toLowerCase().includes(nombreVal)) return false;
+      if(tipoVal && (e.tipo || 'General') !== tipoVal) return false;
+      if(estadoVal && estadoRegistro(e) !== estadoVal) return false;
+      if(fechaVal){
+        const fechaRegistro = e.ts ? new Date(e.ts).toLocaleDateString('es-CR') : '';
+        if(!fechaRegistro.includes(fechaVal)) return false;
+      }
+      return true;
+    });
+
+    adminRows.innerHTML = filtered.map(e => {
+      const estado = estadoRegistro(e);
+      const generadas = entradasGeneradasPara(e.id).length;
+      const solicitadas = cantidadSolicitada(e.entradas);
+      const faltan = solicitadas - generadas;
+      return `
+      <tr>
+        <td class="name-cell">${escapeHtml(e.nombre||'')}</td>
+        <td><a class="wa-link" href="${escapeHtml(buildBuyerWhatsappUrl(e))}" target="_blank" rel="noopener">📲 ${escapeHtml(e.telefono||'')}</a></td>
+        <td>${escapeHtml(e.cedula||'')}</td>
+        <td><span class="type-badge ${escapeHtml(e.tipo||'General')}">${escapeHtml(e.tipo||'General')}</span></td>
+        <td><span class="ticket-badge">${escapeHtml(e.entradas||'')}</span></td>
+        <td><span class="status-badge ${estado}">${estadoLabel(estado)} (${generadas}/${solicitadas})</span></td>
+        <td><span class="ref-code">${escapeHtml(e.referencia||'—')}</span></td>
+        <td class="action-cell">
+          ${faltan > 0 ? `<button type="button" class="confirm-btn" data-action="confirmar" data-id="${escapeHtml(e.id)}">✅ Confirmar compra y generar QR</button>` : ''}
+          <button type="button" class="delete-btn" data-action="borrar" data-id="${escapeHtml(e.id)}">🗑️ Borrar</button>
+        </td>
+      </tr>`;
+    }).join('');
+    adminCount.textContent = filtered.length + ' de ' + currentRegistrations.length + ' registro(s) · actualizado ' + new Date().toLocaleTimeString();
+  }
+
+  window.confirmarPagoDesdeUI = function(registroId, btnEl){
+    const registro = currentRegistrations.find(r => r.id === registroId);
+    if(!registro){ alert('No se encontró el registro.'); return; }
+    confirmarPago(registro, btnEl);
+  };
+
+  window.eliminarRegistro = async function(id, btnEl){
+    if(!id){ alert('No se pudo identificar este registro.'); return; }
+    const ok = confirm('¿Seguro que quieres borrar este registro? Esto también borrará las entradas/QR ya generados para él. Esta acción no se puede deshacer.');
+    if(!ok) return;
+    if(btnEl){ btnEl.disabled = true; btnEl.textContent = 'Borrando…'; }
+    try{
+      const entradasSnap = await db.collection('entradas').where('registroId', '==', id).get();
+
+      const batch = db.batch();
+      batch.delete(db.collection('registros').doc(id));
+      entradasSnap.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+
+    }catch(err){
+      console.error('Error al borrar el registro', err);
+      alert('No se pudo borrar el registro.\n\nDetalle técnico: ' + (err && (err.code || err.message) ? (err.code || '') + ' ' + (err.message || '') : 'error desconocido'));
+      if(btnEl){ btnEl.disabled = false; btnEl.textContent = '🗑️ Borrar'; }
+    }
+  };
+
+  adminRows.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('button[data-action]');
+    if(!btn) return;
+    const id = btn.dataset.id;
+    if(btn.dataset.action === 'confirmar') window.confirmarPagoDesdeUI(id, btn);
+    else if(btn.dataset.action === 'borrar') window.eliminarRegistro(id, btn);
+  });
+
+  filterNombre.addEventListener('input', renderFilteredRows);
+  filterTipo.addEventListener('change', renderFilteredRows);
+  filterEstado.addEventListener('change', renderFilteredRows);
+  filterFecha.addEventListener('input', renderFilteredRows);
+  document.getElementById('refreshAdmin').addEventListener('click', openAdmin);
+
+  const cleanupBtn = document.getElementById('cleanupBtn');
+  cleanupBtn.addEventListener('click', async () => {
+    const idsDeRegistrosActuales = new Set(currentRegistrations.map(r => r.id));
+    const huerfanas = currentEntradas.filter(e => !idsDeRegistrosActuales.has(e.registroId));
+
+    if(huerfanas.length === 0){
+      alert('No se encontraron entradas huérfanas. Todo está en orden.');
+      return;
+    }
+
+    const ok = confirm(
+      `Se encontraron ${huerfanas.length} entrada(s) sin un registro asociado ` +
+      `(de registros que ya fueron borrados). Esto va a borrarlas permanentemente ` +
+      `y actualizará las estadísticas (recaudado, entradas confirmadas, etc). ` +
+      `Esta acción no se puede deshacer.\n\n¿Continuar?`
+    );
+    if(!ok) return;
+
+    cleanupBtn.disabled = true;
+    cleanupBtn.textContent = 'Limpiando…';
+    try{
+      const bloques = [];
+      for(let i = 0; i < huerfanas.length; i += 400){
+        bloques.push(huerfanas.slice(i, i + 400));
+      }
+      for(const bloque of bloques){
+        const batch = db.batch();
+        bloque.forEach(e => batch.delete(db.collection('entradas').doc(e.id)));
+        await batch.commit();
+      }
+      alert(`Se borraron ${huerfanas.length} entrada(s) huérfana(s). Las estadísticas ya quedaron correctas.`);
+    }catch(err){
+      console.error('Error al limpiar entradas huérfanas', err);
+      alert('No se pudo completar la limpieza.\n\nDetalle técnico: ' + (err && (err.code || err.message) ? (err.code || '') + ' ' + (err.message || '') : 'error desconocido') + '\n\nRevisa la consola del navegador (F12) para más detalle, o mándame este mensaje.');
+    }finally{
+      cleanupBtn.disabled = false;
+      cleanupBtn.textContent = '🧹 Limpiar entradas huérfanas';
+    }
+  });
+
+  function detenerListeners(){
+    if(unsubRegs){ unsubRegs(); unsubRegs = null; }
+    if(unsubEnts){ unsubEnts(); unsubEnts = null; }
+  }
+
+  // Escucha en tiempo real: solo lee los cambios, no toda la base cada pocos segundos.
+  function openAdmin(){
+    detenerListeners();
+    adminCount.textContent = 'Cargando…';
+    unsubRegs = db.collection('registros').orderBy('ts', 'desc').onSnapshot((snap) => {
+      currentRegistrations = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      refreshStatsAndTable();
+    }, (err) => {
+      if(!auth.currentUser) return;
+      console.error('Error al leer registros', err);
+      adminCount.textContent = 'No se pudieron cargar los registros.';
+    });
+    unsubEnts = db.collection('entradas').orderBy('emitidaEn', 'desc').onSnapshot((snap) => {
+      currentEntradas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      refreshStatsAndTable();
+    }, (err) => {
+      if(!auth.currentUser) return;
+      console.error('Error al leer entradas', err);
+    });
+  }
+
+</script>
+</body>
+</html>
