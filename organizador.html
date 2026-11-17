@@ -100,6 +100,13 @@
   .ticket-badge{ display:inline-block; background:rgba(51,85,255,0.15); color:var(--lavender); padding:3px 10px; border-radius:999px; font-size:11.5px; font-weight:700; }
   .admin-count{ font-size:12px; color:var(--muted); margin-bottom:10px; }
   .type-badge{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; background:rgba(51,85,255,0.15); color:var(--lavender); }
+  .tipo-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    padding:10px 0; border-bottom:1px solid var(--line); font-size:13px;
+  }
+  .tipo-row:last-child{ border-bottom:none; }
+  .tipo-row.off{ opacity:.55; }
+  .tipo-hint{ font-size:12px; color:var(--muted); margin-bottom:10px; line-height:1.5; }
   .ref-code{ font-family:monospace; font-size:11.5px; color:var(--muted); }
   .delete-btn{
     background:rgba(244,236,216,0.1); border:1px solid rgba(244,236,216,0.4); color:var(--pink);
@@ -129,17 +136,7 @@
   .ghost-btn{
     background:none; border:1px solid var(--line); color:var(--text); border-radius:8px;
     padding:8px 12px; font-size:12px; cursor:pointer; text-decoration:none; display:inline-block;
-    font-family:'Poppins', sans-serif;
   }
-
-  /* Tipos de entrada */
-  .tipo-row{
-    display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
-    padding:10px 0; border-bottom:1px solid var(--line); font-size:13px;
-  }
-  .tipo-row:last-child{ border-bottom:none; }
-  .tipo-row.off{ opacity:.55; }
-  .tipo-hint{ font-size:12px; color:var(--muted); margin-bottom:10px; line-height:1.5; }
 
   /* Modal QR */
   .qr-overlay{ display:none; position:fixed; inset:0; background:rgba(8,5,18,0.8); z-index:50; align-items:center; justify-content:center; padding:20px; }
@@ -160,6 +157,9 @@
     background:rgba(51,85,255,0.08); border:1px solid rgba(51,85,255,0.3); color:var(--muted);
     border-radius:10px; padding:12px 14px; font-size:12px; line-height:1.6; margin-top:14px;
   }
+  .powered{ display:flex; align-items:center; justify-content:flex-start; gap:8px; padding:18px 16px 22px; opacity:.75; }
+  .powered span{ font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:#8d86b0; }
+  .powered img{ height:20px; width:auto; display:block; }
 </style>
 </head>
 <body>
@@ -299,7 +299,7 @@
   };
   firebase.initializeApp(firebaseConfig);
 
-  // App Check (reCAPTCHA)
+  // App Check (reCAPTCHA v3): pega aquí tu clave del sitio. Mientras diga 6LcxbR8uAAAAAEAqwvAZUSVKos_C_iConZx4FxEn queda desactivado.
   const RECAPTCHA_SITE_KEY = '6LcxbR8uAAAAAEAqwvAZUSVKos_C_iConZx4FxEn';
   if(RECAPTCHA_SITE_KEY && RECAPTCHA_SITE_KEY.indexOf('PEGA_AQUI') !== 0){
     firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(RECAPTCHA_SITE_KEY), true);
@@ -352,18 +352,17 @@
     }
   });
 
-  const SINPE_NUMERO = '85846332';
-
   // Valores que tenían los registros hechos antes de existir los tipos configurables
   const LEGACY = { General: { precio: 5000, personas: 1 }, VIP: { precio: 100000, personas: 5 } };
   const LEGACY_PRECIO_QR = { General: 5000, VIP: 20000 };
+  const SINPE_NUMERO = '85846332';
 
   let currentRegistrations = [];
   let currentEntradas = [];
-  let currentTipos = [];
   let unsubRegs = null;
   let unsubEnts = null;
   let unsubTipos = null;
+  let currentTipos = [];
   const generandoIds = new Set();
   let idleTimer = null;
   const IDLE_MS = 30 * 60 * 1000; // cierre automático tras 30 min sin actividad
@@ -412,7 +411,7 @@
       : [`-Tipo de entrada: ${tipo}`, `-Precio por entrada: ${formatColones(precio)}`];
 
     const lineas = [
-      '¡Hola!', 'Te escribo por tu registro para BrukOff Sweet Dreams.', '',
+      '¡Hola!', 'Te escribo por tu registro para AXORA Sweet Dreams.', '',
       `Quiero confirmar la compra de ${posesivo} ${entradasLabel}:`,
       ...lineasPrecio,
       `-Total: ${totalTexto}`, `-Número de referencia: ${entry.referencia || '—'}`, '',
@@ -511,7 +510,7 @@
 
     const numero = formatPhoneForWhatsapp(registro.telefono);
     const mensaje = [
-      `¡Tu entrada para BrukOff Sweet Dreams está confirmada! `, '',
+      `¡Tu entrada para AXORA Sweet Dreams está confirmada! `, '',
       `Código de tu entrada: ${entrada.codigo}`, `Categoría: ${entrada.tipo}`, '',
       'Te adjunto tu código QR — muéstralo en la entrada del evento junto a tu identificación.',
       'Guárdalo, es único y personal, no lo compartas.'
@@ -773,7 +772,7 @@
       alert(`Se borraron ${huerfanas.length} entrada(s) huérfana(s). Las estadísticas ya quedaron correctas.`);
     }catch(err){
       console.error('Error al limpiar entradas huérfanas', err);
-      alert('No se pudo completar la limpieza.\n\nDetalle técnico: ' + (err && (err.code || err.message) ? (err.code || '') + ' ' + (err.message || '') : 'error desconocido') + '\n\nRevisa la consola del navegador (F12) para más detalle.');
+      alert('No se pudo completar la limpieza.\n\nDetalle técnico: ' + (err && (err.code || err.message) ? (err.code || '') + ' ' + (err.message || '') : 'error desconocido') + '\n\nRevisa la consola del navegador (F12) para más detalle, o mándame este mensaje.');
     }finally{
       cleanupBtn.disabled = false;
       cleanupBtn.textContent = '🧹 Limpiar entradas huérfanas';
@@ -817,5 +816,6 @@
   }
 
 </script>
+<div class="powered"><span>Powered by</span><img src="logo-alfarys.webp" alt="Alfarys Tech" height="20"></div>
 </body>
 </html>
