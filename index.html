@@ -67,7 +67,7 @@
     padding:8px 14px; border-radius:999px; font-size:12.5px; color:var(--text);
     display:flex; align-items:center; gap:6px;
   }
-  .brand-logo{ display:block; margin:0 auto 4px; width:min(360px,82vw); height:auto; filter:drop-shadow(0 0 22px rgba(244,236,216,.18)); }
+  .brand-logo{ display:block; margin:0 auto 4px; width:min(230px,62vw); height:auto; filter:drop-shadow(0 0 22px rgba(244,236,216,.18)); }
   .venue{ margin-top:26px; }
   .venue-label{ font-size:10.5px; letter-spacing:.3em; text-transform:uppercase; color:var(--gold); font-weight:600; margin:0 0 10px; }
   .venue-logo{ display:block; margin:0 auto; width:min(150px,42vw); height:auto; }
@@ -104,7 +104,7 @@
     font-size:14px; transition:border-color .15s ease;
   }
   .radio-option:has(input:checked){ border-color:var(--pink); background:rgba(244,236,216,0.08); }
-  .radio-option input{ accent-color:var(--pink); width:16px; height:16px; }
+  .radio-option input{ accent-color:var(--pink); width:16px; height:16px; flex:none; }
   .check-option{
     display:flex; align-items:flex-start; gap:10px; background:var(--bg-field);
     border:1px solid var(--line); border-radius:10px; padding:13px; margin-top:6px;
@@ -132,7 +132,7 @@
   .confirm h2{ font-family:'Bebas Neue', sans-serif; font-size:30px; letter-spacing:.03em; margin:0 0 8px; }
   .confirm p{ color:var(--muted); font-size:14px; line-height:1.6; margin:0 0 4px; }
   .recap{ text-align:left; background:var(--bg-field); border:1px solid var(--line); border-radius:12px; padding:16px; margin-top:18px; font-size:13.5px; }
-  .recap div{ display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--line); }
+  .recap div{ display:flex; justify-content:space-between; gap:12px; padding:6px 0; border-bottom:1px solid var(--line); }
   .recap div:last-child{ border-bottom:none; }
   .recap span:first-child{ color:var(--muted); }
   .again{ margin-top:20px; background:none; border:1px solid var(--line); color:var(--text); padding:11px 16px; border-radius:10px; cursor:pointer; font-size:13px; }
@@ -146,20 +146,18 @@
     display:flex; align-items:center; justify-content:center; padding:0;
   }
   #musicBtn:hover{ border-color:var(--lavender); }
-  .powered{ display:flex; align-items:center; justify-content:flex-start; gap:8px; padding:18px 16px 22px; opacity:.75; }
-  .powered span{ font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:#8d86b0; }
-  .powered img{ height:20px; width:auto; display:block; }
 </style>
 </head>
 <body>
 
 <div class="hero">
   <div class="stars" id="stars"></div>
-  <img class="brand-logo" src="logo-axora.webp" width="1000" height="406" alt="AXORA Events — Organización de eventos">
+  <!-- ⚠️ REEMPLAZA REEMPLAZAR_LOGO_BRUKOFF por el src="data:image/webp;base64,..." que ya tienes en tu index.html actual -->
+  <img class="brand-logo" src="REEMPLAZAR_LOGO_BRUKOFF" width="460" height="371" alt="BrukOff — Organización de eventos">
   <div class="moon">✨</div>
-  <p class="eyebrow">AXORA PRESENTA</p>
+  <p class="eyebrow">BRUKOFF PRESENTA</p>
   <h1 class="title"> Sweet Dreams </h1>
-  <p class="subtitle">Una noche de música y sorpresas con DJ CDAU, Caliel, DJ BomberMusik y artista sorpresa.</p>
+  <p class="subtitle">Una noche de música y sorpresas con DJ CDAU y un artista sorpresa.</p>
   <div class="info-row">
     <div class="chip">📅 19 de diciembre</div>
     <div class="chip">🕘 9:00 PM</div>
@@ -167,7 +165,8 @@
   </div>
   <div class="venue">
     <p class="venue-label">Lugar</p>
-    <img class="venue-logo" src="logo-venue.webp" width="380" height="347" alt="Rancho Agüero's Bar &amp; Restaurante">
+    <!-- ⚠️ REEMPLAZA REEMPLAZAR_LOGO_RANCHO por el src="data:image/webp;base64,..." del logo del rancho que ya tienes -->
+    <img class="venue-logo" src="REEMPLAZAR_LOGO_RANCHO" width="380" height="347" alt="Rancho Agüero's Bar &amp; Restaurante">
   </div>
   <div class="badge18">🔞 Exclusivamente para mayores de edad</div>
 </div>
@@ -190,13 +189,13 @@
       <label>Número de cédula<span class="req">*</span></label>
       <input type="text" inputmode="numeric" id="cedula" placeholder="Tu respuesta" minlength="5" maxlength="30" required>
 
-      <label>Tipo de entrada</label>
-      <div class="note-box">🎟️ <strong>Entrada General — ₡5.000</strong> por persona</div>
+      <label>Tipo de entrada<span class="req">*</span></label>
+      <div class="radio-group" id="tipoGroup"><div class="hint">Cargando…</div></div>
 
       <div id="ticketSection">
         <label>¿Cuántas entradas deseas?<span class="req">*</span></label>
         <div class="radio-group" id="ticketGroup">
-          <label class="radio-option"><input type="radio" name="entradas" value="1" required>1 entrada</label>
+          <label class="radio-option"><input type="radio" name="entradas" value="1">1 entrada</label>
           <label class="radio-option"><input type="radio" name="entradas" value="2">2 entradas</label>
           <label class="radio-option"><input type="radio" name="entradas" value="3">3 entradas</label>
           <label class="radio-option"><input type="radio" name="entradas" value="4">4 entradas</label>
@@ -265,8 +264,6 @@
   });
 
   const ticketSection = document.getElementById('ticketSection');
-  const entradaRadios = document.querySelectorAll('input[name="entradas"]');
-  const fiveRadio = document.querySelector('input[name="entradas"][value="5+"]');
 
   function escapeHtml(str){
     const d = document.createElement('div');
@@ -284,12 +281,55 @@
   };
   firebase.initializeApp(firebaseConfig);
 
-  // App Check (reCAPTCHA v3): pega aquí tu clave del sitio. Mientras diga 6LcxbR8uAAAAAEAqwvAZUSVKos_C_iConZx4FxEn queda desactivado.
+  // App Check (reCAPTCHA)
   const RECAPTCHA_SITE_KEY = '6LcxbR8uAAAAAEAqwvAZUSVKos_C_iConZx4FxEn';
   if(RECAPTCHA_SITE_KEY && RECAPTCHA_SITE_KEY.indexOf('PEGA_AQUI') !== 0){
     firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(RECAPTCHA_SITE_KEY), true);
   }
   const db = firebase.firestore();
+
+  // ===== Tipos de entrada (los administra el organizador) =====
+  let tiposActivos = [];
+  const tipoGroup = document.getElementById('tipoGroup');
+  const colones = n => '₡' + Number(n).toLocaleString('es-CR');
+
+  function tipoSeleccionado(){
+    const el = document.querySelector('input[name="tipo"]:checked');
+    return el ? tiposActivos.find(t => t.id === el.value) || null : null;
+  }
+  function actualizarEntradas(){
+    const t = tipoSeleccionado();
+    // En paquetes (personas > 1) no se elige cantidad
+    ticketSection.style.display = (t && t.personas > 1) ? 'none' : 'block';
+  }
+  function renderTipos(){
+    const previo = tipoSeleccionado();
+    if(!tiposActivos.length){
+      tipoGroup.innerHTML = '<div class="note-box">Por ahora no hay entradas disponibles.</div>';
+      actualizarEntradas();
+      return;
+    }
+    tipoGroup.innerHTML = tiposActivos.map(t => {
+      const detalle = t.personas > 1
+        ? `${colones(t.precio)} · paquete hasta ${t.personas} personas`
+        : `${colones(t.precio)} por persona`;
+      const checked = ((previo && previo.id === t.id) || (!previo && tiposActivos.length === 1)) ? 'checked' : '';
+      return `<label class="radio-option"><input type="radio" name="tipo" value="${escapeHtml(t.id)}" ${checked}>
+        <span><strong>${escapeHtml(t.nombre)}</strong> — ${detalle}</span></label>`;
+    }).join('');
+    actualizarEntradas();
+  }
+  tipoGroup.addEventListener('change', actualizarEntradas);
+
+  db.collection('tipos_entrada').where('activo', '==', true).onSnapshot(snap => {
+    tiposActivos = snap.docs
+      .map(d => ({ id: d.id, personas: 1, ...d.data() }))
+      .sort((a, b) => (a.orden || 0) - (b.orden || 0));
+    renderTipos();
+  }, err => {
+    console.error('Error al leer tipos de entrada', err);
+    tipoGroup.innerHTML = '<div class="note-box">No se pudieron cargar los tipos de entrada. Recarga la página.</div>';
+  });
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -317,16 +357,28 @@
     const cedula = document.getElementById('cedula').value.trim();
     if(nombre.length < 3 || nombre.length > 120){ alert('Escribe tu nombre completo (mínimo 3 caracteres).'); return; }
     if(cedula.length < 5 || cedula.length > 30){ alert('Revisa tu número de cédula.'); return; }
-    const tipo = 'General';
-    const entradasEl = document.querySelector('input[name="entradas"]:checked');
-    if(!entradasEl){ alert('Selecciona cuántas entradas deseas.'); return; }
-    const entradas = entradasEl.value;
+
+    const t = tipoSeleccionado();
+    if(!t){ alert('Selecciona el tipo de entrada.'); return; }
+    let entradas;
+    if(t.personas > 1){
+      entradas = String(t.personas);
+    }else{
+      const el = document.querySelector('input[name="entradas"]:checked');
+      if(!el){ alert('Selecciona cuántas entradas deseas.'); return; }
+      entradas = el.value;
+    }
     const referencia = generarReferencia();
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Enviando…';
 
-    const entry = { nombre, telefono, cedula, tipo, entradas, referencia, ts: new Date().toISOString() };
+    // Se guarda una copia del precio y las personas al momento de la compra
+    const entry = {
+      nombre, telefono, cedula,
+      tipo: t.nombre, tipoId: t.id, precio: t.precio, personas: t.personas,
+      entradas, referencia, ts: new Date().toISOString()
+    };
 
     let saveFailed = false;
     try{
@@ -339,7 +391,7 @@
     if(saveFailed){
       submitBtn.disabled = false;
       submitBtn.textContent = 'Enviar registro';
-      alert('No se pudo guardar tu registro. Por favor intenta de nuevo.');
+      alert('No se pudo guardar tu registro. Es posible que este tipo de entrada ya no esté disponible. Recarga la página e intenta de nuevo.');
       return;
     }
 
@@ -349,7 +401,7 @@
       <div><span>Nombre</span><span>${escapeHtml(nombre)}</span></div>
       <div><span>Teléfono</span><span>${escapeHtml(telefono)}</span></div>
       <div><span>Cédula</span><span>${escapeHtml(cedula)}</span></div>
-      <div><span>Tipo</span><span>${escapeHtml(tipo)}</span></div>
+      <div><span>Tipo</span><span>${escapeHtml(t.nombre)}</span></div>
       <div><span>Entradas</span><span>${escapeHtml(entradas)}</span></div>
       <div><span>N° de referencia</span><span>${escapeHtml(referencia)}</span></div>
     `;
@@ -362,7 +414,7 @@
 
   document.getElementById('againBtn').addEventListener('click', () => {
     form.reset();
-    ticketSection.style.display = 'block';
+    renderTipos();
     confirmCard.style.display = 'none';
     formCard.style.display = 'block';
   });
@@ -392,6 +444,5 @@
   document.addEventListener('pointerdown', primerToque);
   document.addEventListener('keydown', primerToque);
 </script>
-<div class="powered"><span>Powered by</span><img src="logo-alfarys.webp" alt="Alfarys Tech" height="20"></div>
 </body>
 </html>
