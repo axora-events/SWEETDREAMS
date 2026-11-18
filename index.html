@@ -159,7 +159,7 @@
   <div class="moon">✨</div>
   <p class="eyebrow">AXORA PRESENTA</p>
   <h1 class="title"> Sweet Dreams </h1>
-  <p class="subtitle">Una noche de música y sorpresas con DJ CDAU, Caliel, DJ BomberMusik y artista sorpresa.</p>
+  <p class="subtitle">Una noche de música y sorpresas con Caliel, DJ BomberMusik, King Tico, G-ZUS y artistas invitados.</p>
   <div class="info-row">
     <div class="chip">📅 19 de diciembre</div>
     <div class="chip">🕘 9:00 PM</div>
@@ -282,14 +282,13 @@
   };
   firebase.initializeApp(firebaseConfig);
 
-  // App Check (reCAPTCHA v3): pega aquí tu clave del sitio. Mientras diga 6LcxbR8uAAAAAEAqwvAZUSVKos_C_iConZx4FxEn queda desactivado.
   const RECAPTCHA_SITE_KEY = '6LcxbR8uAAAAAEAqwvAZUSVKos_C_iConZx4FxEn';
   if(RECAPTCHA_SITE_KEY && RECAPTCHA_SITE_KEY.indexOf('PEGA_AQUI') !== 0){
     firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(RECAPTCHA_SITE_KEY), true);
   }
   const db = firebase.firestore();
 
-  // ===== Tipos de entrada (los administra el organizador) =====
+  // ===== Tipos de entradas =====
   let tiposActivos = [];
   const tipoGroup = document.getElementById('tipoGroup');
   const colones = n => '₡' + Number(n).toLocaleString('es-CR');
